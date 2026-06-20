@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import matplotlib.pyplot as plt
 
 
 st.set_page_config(
@@ -198,7 +199,8 @@ st.markdown(
 
 def load_model():
     return joblib.load("models/mood_model.pkl")
-
+def load_data():
+    return pd.read_csv("data/mood_data.csv")
 
 def predict_mood(
     model,
@@ -469,6 +471,152 @@ if predict_button:
 
     except FileNotFoundError:
         st.error("Model file not found. Please run `python src/train_model.py` first.")
+
+st.markdown("---")
+
+st.markdown(
+    """
+    <div class="dashboard-card">
+        <div class="section-title">📈 Mood Data Insights</div>
+        <div class="section-caption">
+            Explore how moods are distributed and how lifestyle habits differ across mood categories.
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+try:
+    data = load_data()
+
+    chart_col1, chart_col2 = st.columns(2, gap="large")
+
+    with chart_col1:
+        st.markdown("### Mood Distribution")
+
+        mood_counts = data["mood"].value_counts()
+
+        mood_colors = {
+            "Good": "#22c55e",
+            "Okay": "#f59e0b",
+            "Bad": "#ef4444",
+        }
+
+        colors = [mood_colors.get(mood, "#8b5cf6") for mood in mood_counts.index]
+
+        fig, ax = plt.subplots(figsize=(6, 4))
+        fig.patch.set_facecolor("#0f1117")
+        ax.set_facecolor("#171a23")
+
+        bars = ax.bar(
+            mood_counts.index,
+            mood_counts.values,
+            color=colors,
+            edgecolor="#f9fafb",
+            linewidth=1.2,
+        )
+
+        ax.set_title(
+            "Mood Distribution",
+            color="#f9fafb",
+            fontsize=16,
+            fontweight="bold",
+            pad=15,
+        )
+        ax.set_xlabel("Mood", color="#cbd5e1", fontsize=11)
+        ax.set_ylabel("Count", color="#cbd5e1", fontsize=11)
+        ax.tick_params(colors="#f9fafb")
+
+        ax.grid(axis="y", linestyle="--", alpha=0.18)
+
+        for spine in ax.spines.values():
+            spine.set_color("#2b3040")
+
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                height + 1,
+                int(height),
+                ha="center",
+                va="bottom",
+                color="#f9fafb",
+                fontsize=11,
+                fontweight="bold",
+            )
+
+        st.pyplot(fig)
+
+    with chart_col2:
+        st.markdown("### Average Habit by Mood")
+
+        numeric_columns = [
+            "sleep_hours",
+            "stress_level",
+            "study_work_hours",
+            "exercise_minutes",
+            "screen_time_hours",
+            "water_intake",
+        ]
+
+        selected_feature = st.selectbox(
+            "Choose a habit to compare",
+            numeric_columns,
+        )
+
+        average_by_mood = data.groupby("mood")[selected_feature].mean()
+
+        feature_colors = ["#8b5cf6", "#ec4899", "#38bdf8"]
+        colors = feature_colors[: len(average_by_mood)]
+
+        fig, ax = plt.subplots(figsize=(6, 4))
+        fig.patch.set_facecolor("#0f1117")
+        ax.set_facecolor("#171a23")
+
+        bars = ax.bar(
+            average_by_mood.index,
+            average_by_mood.values,
+            color=colors,
+            edgecolor="#f9fafb",
+            linewidth=1.2,
+        )
+
+        feature_name = selected_feature.replace("_", " ").title()
+
+        ax.set_title(
+            f"Average {feature_name} by Mood",
+            color="#f9fafb",
+            fontsize=16,
+            fontweight="bold",
+            pad=15,
+        )
+        ax.set_xlabel("Mood", color="#cbd5e1", fontsize=11)
+        ax.set_ylabel(feature_name, color="#cbd5e1", fontsize=11)
+        ax.tick_params(colors="#f9fafb")
+
+        ax.grid(axis="y", linestyle="--", alpha=0.18)
+
+        for spine in ax.spines.values():
+            spine.set_color("#2b3040")
+
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                height,
+                f"{height:.1f}",
+                ha="center",
+                va="bottom",
+                color="#f9fafb",
+                fontsize=11,
+                fontweight="bold",
+            )
+
+        st.pyplot(fig)
+
+except FileNotFoundError:
+    st.warning("Dataset file not found. Please make sure `data/mood_data.csv` exists.")
+
 
 
 st.markdown(
