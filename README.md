@@ -2,6 +2,9 @@
 
 Mood Tracker is a machine learning web app that predicts a user's mood based on daily lifestyle habits such as sleep, stress, study/work hours, exercise, screen time and water intake.
 
+## Live Demo
+
+Try the app here: https://moodtrackerdd.streamlit.app/
 
 ## Features
 
